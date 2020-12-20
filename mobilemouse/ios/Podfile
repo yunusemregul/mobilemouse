@@ -8,6 +8,8 @@ target 'mobilemouse' do
 
   use_react_native!(:path => config["reactNativePath"])
 
+  pod 'react-native-appearance', :path => '../node_modules/react-native-appearance'
+
   target 'mobilemouseTests' do
     inherit! :complete
     # Pods for testing

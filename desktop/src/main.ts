@@ -1,14 +1,20 @@
-import {app, BrowserWindow} from "electron";
+import { app, BrowserWindow } from "electron";
 import * as WebSocket from 'ws';
+import * as http from 'http';
 
-const wss = new WebSocket.Server({ port: 8080 });
+const PORT = 41414;
+
+const server = http.createServer(function (req, res) {
+  res.writeHead(200);
+  res.end();
+});
+
+const wss = new WebSocket.Server({ server });
 
 wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) {
-    console.log('received: %s', message);
+    
   });
-
-  ws.send('something');
 });
 
 function createWindow() {
@@ -36,3 +42,5 @@ app.on("activate", () => {
     createWindow();
   }
 });
+
+server.listen(PORT);
