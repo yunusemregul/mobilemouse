@@ -17,11 +17,14 @@
     "@babel/core": "7.12.10",
     "@babel/runtime": "7.12.5",
     "@react-native-community/eslint-config": "1.1.0",
+    "@types/react": "^17.0.0",
+    "@types/react-native": "^0.63.42",
     "babel-jest": "25.5.1",
     "eslint": "6.8.0",
     "jest": "25.5.4",
     "metro-react-native-babel-preset": "0.59.0",
-    "react-test-renderer": "16.13.1"
+    "react-test-renderer": "16.13.1",
+    "typescript": "^4.2.0-dev.20201219"
   },
   "jest": {
     "preset": "react-native"

@@ -14,6 +14,7 @@ import {
   View,
   Text,
   StatusBar,
+  AppRegistry,
 } from 'react-native';
 
 import {
@@ -23,8 +24,9 @@ import {
   DebugInstructions,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import {name as appName} from './app.json';
 
-const App: () => React$Node = () => {
+const App: () => React.ReactElement = () => {
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -33,16 +35,11 @@ const App: () => React$Node = () => {
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
           <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
           <View style={styles.body}>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Step One</Text>
               <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
+                Edit <Text style={styles.highlight}>App.tsx</Text> to change this
                 screen and then come back to see your edits.
               </Text>
             </View>
@@ -111,4 +108,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+AppRegistry.registerComponent(appName, () => App);

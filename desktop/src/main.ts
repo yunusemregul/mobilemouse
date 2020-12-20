@@ -3,8 +3,8 @@ import * as WebSocket from 'ws';
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(message) {
+wss.on('connection', (ws) => {
+  ws.on('message', (message) => {
     console.log('received: %s', message);
   });
 
@@ -20,7 +20,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile("index.html");
+  win.loadFile("src/views/index.html");
 }
 
 app.whenReady().then(createWindow);
