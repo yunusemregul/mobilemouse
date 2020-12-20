@@ -17,26 +17,57 @@ const PORT = 41414;
 let ws: WebSocket;
 let dragLastPointX: number, dragLastPointY: number; // TODO: join these two in a single object
 
+//let wsecho: WebSocket;
+
 function App() {
   const [desktopIPs, setDesktopIPs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  useEffect(() => {
+  // TODO: learn what useAsync is
+  function findDesktops() {
     NetworkInfo.getIPV4Address().then((ipAddress) => {
       if (ipAddress) {
         const LAN = ipAddress.substring(0, ipAddress.lastIndexOf('.'));
+        console.log('LAN: ' + LAN + '.X');
 
-        for (let i = 0; i <= 255; i++) {
+        for (let i = 2; i <= 16; i++) {
           const ipToScan = LAN + '.' + i;
 
-          fetch('http://' + ipToScan + ':' + PORT)
-            .then(() => {
-              setDesktopIPs((desktopIPs) => [...desktopIPs, ipToScan]);
-            })
-            .catch(() => {});
+          let xhr = new XMLHttpRequest();
+
+          xhr.onload = function () {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                if (xhr.getResponseHeader('Content-Type') === 'mobilemouse') {
+                  if (!desktopIPs.includes(ipToScan)) {
+                    setDesktopIPs([...desktopIPs, ipToScan]);
+                  }
+                }
+              }
+            }
+          };
+
+          xhr.open('HEAD', 'http://' + ipToScan + ':' + PORT);
+          xhr.setRequestHeader('Connection', 'close');
+          xhr.timeout = 1000;
+          xhr.send(null);
         }
       }
     });
+  }
+
+  useEffect(() => {
+    findDesktops();
+    /*wsecho = new WebSocket('wss://echo.websocket.org');
+    let i = 0;
+    wsecho.onopen = function () {
+      setInterval(() => {
+        wsecho.send('' + i++);
+      }, 200);
+    };
+    wsecho.onmessage = function (message) {
+      console.log(message);
+    };*/
   }, []);
 
   return (
@@ -53,13 +84,15 @@ function App() {
             onMoveShouldSetResponder={() => true}
             onResponderMove={(e) => {
               // TODO: doesn't work as expected
-              ws.send(
-                e.nativeEvent.pageX -
-                  dragLastPointX +
-                  ':' +
-                  (e.nativeEvent.pageY - dragLastPointY),
-              );
-              
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(
+                  e.nativeEvent.pageX -
+                    dragLastPointX +
+                    ':' +
+                    (e.nativeEvent.pageY - dragLastPointY),
+                );
+              }
+
               dragLastPointX = e.nativeEvent.pageX;
               dragLastPointY = e.nativeEvent.pageY;
             }}>
@@ -76,7 +109,7 @@ function App() {
               flex: 1,
               flexDirection: 'row',
             }}>
-            <View style={{padding: 12}}>
+            <View style={{padding: 12, width: '100%'}}>
               <Text style={{color: '#fff', fontSize: 20}}>
                 Connectable devices:
               </Text>
@@ -85,7 +118,10 @@ function App() {
                   <TouchableOpacity
                     onPress={() => {
                       ws = new WebSocket('ws://' + ip + ':' + PORT);
-                      setIsConnected(true);
+                      let i = 0;
+                      ws.onopen = function () {
+                        setIsConnected(true);
+                      };
                     }}
                     key={ip}
                     style={{
@@ -100,6 +136,20 @@ function App() {
                   </TouchableOpacity>
                 ))}
               </View>
+              <TouchableOpacity
+                style={{
+                  backgroundColor: '#666',
+                  marginTop: 12,
+                  padding: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+                onPress={findDesktops}>
+                <Text style={{color: '#ffff00', fontWeight: 'bold'}}>
+                  REFRESH
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </>
