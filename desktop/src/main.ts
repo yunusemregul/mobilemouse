@@ -2,6 +2,7 @@ import { app, BrowserWindow } from "electron";
 import * as WebSocket from 'ws';
 import * as http from 'http';
 import * as robot from 'robotjs';
+import * as dgram from 'dgram';
 
 const PORT = 41414;
 
@@ -13,21 +14,14 @@ const server = http.createServer(function (req, res) {
   res.end();
 });
 
-const wss = new WebSocket.Server({ server });
+const udpServer = dgram.createSocket("udp4");
 
-// TODO: it doesn't work as expected
+udpServer.on('message', (msg, rinfo) => {
+  console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+})
 
-wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(message: string) {
-    /*let splitted = message.split(':');
-    let x = Number(message[0]);
-    let y = Number(message[1]);
-    console.log(x, y);*/
-    console.log(message);
-
-    //robot.moveMouse(robot.getMousePos().x + 1, robot.getMousePos().y + 1);
-  });
-});
+udpServer.bind(PORT + 1);
+server.listen(PORT);
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -54,5 +48,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-server.listen(PORT);

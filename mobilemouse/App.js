@@ -8,20 +8,15 @@ import {
 } from 'react-native';
 import {NetworkInfo} from 'react-native-network-info';
 import {name as appName} from './app.json';
+import dgram from 'react-native-udp';
 
 const PORT = 41414;
 
-// TODO: refresh connectable desktop IPs every x secs
 // TODO: separate this file into smaller components, improve the UI
 
-let ws: WebSocket;
-let dragLastPointX: number, dragLastPointY: number; // TODO: join these two in a single object
-
-//let wsecho: WebSocket;
-
 function App() {
-  const [desktopIPs, setDesktopIPs] = useState<string[]>([]);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [desktopIPs, setDesktopIPs] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
 
   // TODO: learn what useAsync is
   function findDesktops() {
@@ -58,16 +53,6 @@ function App() {
 
   useEffect(() => {
     findDesktops();
-    /*wsecho = new WebSocket('wss://echo.websocket.org');
-    let i = 0;
-    wsecho.onopen = function () {
-      setInterval(() => {
-        wsecho.send('' + i++);
-      }, 200);
-    };
-    wsecho.onmessage = function (message) {
-      console.log(message);
-    };*/
   }, []);
 
   return (
@@ -82,20 +67,7 @@ function App() {
               justifyContent: 'center',
             }}
             onMoveShouldSetResponder={() => true}
-            onResponderMove={(e) => {
-              // TODO: doesn't work as expected
-              if (ws.readyState === WebSocket.OPEN) {
-                ws.send(
-                  e.nativeEvent.pageX -
-                    dragLastPointX +
-                    ':' +
-                    (e.nativeEvent.pageY - dragLastPointY),
-                );
-              }
-
-              dragLastPointX = e.nativeEvent.pageX;
-              dragLastPointY = e.nativeEvent.pageY;
-            }}>
+            onResponderMove={(e) => {}}>
             <Text style={{color: '#fff', top: 60, textAlign: 'center'}}>
               Drag around to control your mouse!
             </Text>
@@ -116,13 +88,7 @@ function App() {
               <View style={{display: 'flex', flexDirection: 'row'}}>
                 {desktopIPs.map((ip) => (
                   <TouchableOpacity
-                    onPress={() => {
-                      ws = new WebSocket('ws://' + ip + ':' + PORT);
-                      let i = 0;
-                      ws.onopen = function () {
-                        setIsConnected(true);
-                      };
-                    }}
+                    onPress={() => {}}
                     key={ip}
                     style={{
                       backgroundColor: '#555',
