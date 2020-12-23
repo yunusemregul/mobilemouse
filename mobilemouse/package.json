@@ -10,11 +10,14 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-native": "^0.63.42",
     "react": "^17.0.1",
     "react-native": "0.63.4",
     "react-native-appearance": "^0.3.4",
     "react-native-network-info": "^5.2.1",
-    "react-native-udp": "^4.1.0"
+    "react-native-udp": "github:yunusemregul/react-native-udp",
+    "typescript": "^4.1.3"
   },
   "devDependencies": {
     "@babel/core": "7.12.10",

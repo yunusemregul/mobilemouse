@@ -1,5 +1,4 @@
 import { app, BrowserWindow } from "electron";
-import * as WebSocket from 'ws';
 import * as http from 'http';
 import * as robot from 'robotjs';
 import * as dgram from 'dgram';
@@ -17,7 +16,26 @@ const server = http.createServer(function (req, res) {
 const udpServer = dgram.createSocket("udp4");
 
 udpServer.on('message', (msg, rinfo) => {
-  console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+  const data = JSON.parse(msg.toString());
+
+  console.log(data);
+
+  switch (data.operation) {
+    case 'move':
+      {
+        // temporary sensitivity adjustments
+        data.x /= 10;
+        data.y /= 10;
+
+        robot.moveMouse(robot.getMousePos().x + data.x, robot.getMousePos().y + data.y);
+        break;
+      }
+    case 'click':
+      {
+        robot.mouseClick();
+        break;
+      }
+  }
 })
 
 udpServer.bind(PORT + 1);

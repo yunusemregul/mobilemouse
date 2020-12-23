@@ -9,17 +9,24 @@ import {
 import {NetworkInfo} from 'react-native-network-info';
 import {name as appName} from './app.json';
 import dgram from 'react-native-udp';
+import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
 
 const PORT = 41414;
 
 // TODO: separate this file into smaller components, improve the UI
 
+let uSocket: UdpSocket;
+let connectedIp: string;
+let dragData: {lastX: number; lastY: number} = {lastX: 0, lastY: 0};
+
 function App() {
-  const [desktopIPs, setDesktopIPs] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const [desktopIPs, setDesktopIPs] = useState<string[]>([]);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+
+  console.log('re render');
 
   // TODO: learn what useAsync is
-  function findDesktops() {
+  async function findDesktops() {
     NetworkInfo.getIPV4Address().then((ipAddress) => {
       if (ipAddress) {
         const LAN = ipAddress.substring(0, ipAddress.lastIndexOf('.'));
@@ -51,6 +58,20 @@ function App() {
     });
   }
 
+  // sends udp message to server
+  async function sendUDP(operation: string, data: any) {
+    uSocket.send(
+      JSON.stringify({operation: operation, ...data}),
+      undefined,
+      undefined,
+      PORT + 1,
+      connectedIp,
+      function (err) {
+        if (err) throw err;
+      },
+    );
+  }
+
   useEffect(() => {
     findDesktops();
   }, []);
@@ -66,8 +87,26 @@ function App() {
               flexDirection: 'row',
               justifyContent: 'center',
             }}
+            onStartShouldSetResponder={() => true}
+            onResponderStart={(e) => {
+              dragData.lastX = e.nativeEvent.pageX;
+              dragData.lastY = e.nativeEvent.pageY;
+            }}
+            onResponderRelease={(e) => {
+              if (
+                e.nativeEvent.pageX === dragData.lastX &&
+                e.nativeEvent.pageY === dragData.lastY
+              ) {
+                sendUDP('click', {});
+              }
+            }}
             onMoveShouldSetResponder={() => true}
-            onResponderMove={(e) => {}}>
+            onResponderMove={(e) => {
+              sendUDP('move', {
+                x: e.nativeEvent.pageX - dragData.lastX,
+                y: e.nativeEvent.pageY - dragData.lastY,
+              });
+            }}>
             <Text style={{color: '#fff', top: 60, textAlign: 'center'}}>
               Drag around to control your mouse!
             </Text>
@@ -88,7 +127,12 @@ function App() {
               <View style={{display: 'flex', flexDirection: 'row'}}>
                 {desktopIPs.map((ip) => (
                   <TouchableOpacity
-                    onPress={() => {}}
+                    onPress={() => {
+                      setIsConnected(true);
+                      connectedIp = ip;
+                      uSocket = dgram.createSocket({type: 'udp4'});
+                      uSocket.bind(PORT + 1);
+                    }}
                     key={ip}
                     style={{
                       backgroundColor: '#555',

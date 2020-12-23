@@ -78,7 +78,7 @@ import com.android.build.OutputFile
  */
 
 project.ext.react = [
-    entryFile: "App.js",
+    entryFile: "App.tsx",
     enableHermes: true  // clean and rebuild if changing
 ]
 
