@@ -1,10 +1,27 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<title>test</title>
-	<script defer src="./dist/public/js/script.js"></script>
-</head>
-<body>
-
-</body>
+  <head>
+    <title>test</title>
+    <script src="../../dist/public/js/script.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="section">
+      <div><span style="font-weight: bold">SERVER AKTİF</span></div>
+      <div><span style="font-weight: bold">IP: </span><a id="lan_ip"></a></div>
+      <div>
+        <span style="font-weight: bold">AD: </span><a id="computer_name"></a>
+      </div>
+    </div>
+    <div class="section">Bağlı telefon yok.</div>
+    <div class="section">
+      Bağlantı QR kodu:
+      <canvas id="qrcanvas"> </canvas>
+    </div>
+  </body>
 </html>

@@ -105,8 +105,8 @@ function App() {
             onMoveShouldSetResponder={() => true}
             onResponderMove={(e) => {
               sendUDP('move', {
-                x: e.nativeEvent.pageX - dragData.lastX,
-                y: e.nativeEvent.pageY - dragData.lastY,
+                x: Math.round(e.nativeEvent.pageX - dragData.lastX),
+                y: Math.round(e.nativeEvent.pageY - dragData.lastY),
               });
               dragData.lastX = e.nativeEvent.pageX;
               dragData.lastY = e.nativeEvent.pageY;
