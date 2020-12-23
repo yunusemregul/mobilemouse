@@ -23,11 +23,8 @@ udpServer.on('message', (msg, rinfo) => {
   switch (data.operation) {
     case 'move':
       {
-        // temporary sensitivity adjustments
-        data.x /= 10;
-        data.y /= 10;
-
-        robot.moveMouse(robot.getMousePos().x + data.x, robot.getMousePos().y + data.y);
+        const mousePos = robot.getMousePos();
+        robot.moveMouse(mousePos.x + data.x, mousePos.y + data.y);
         break;
       }
     case 'click':

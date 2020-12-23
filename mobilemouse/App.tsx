@@ -17,7 +17,7 @@ const PORT = 41414;
 
 let uSocket: UdpSocket;
 let connectedIp: string;
-let dragData: {lastX: number; lastY: number} = {lastX: 0, lastY: 0};
+let dragData = {lastX: 0, lastY: 0, startX: 0, startY: 0};
 
 function App() {
   const [desktopIPs, setDesktopIPs] = useState<string[]>([]);
@@ -89,13 +89,15 @@ function App() {
             }}
             onStartShouldSetResponder={() => true}
             onResponderStart={(e) => {
+              dragData.startX = e.nativeEvent.pageX;
+              dragData.startY = e.nativeEvent.pageY;
               dragData.lastX = e.nativeEvent.pageX;
               dragData.lastY = e.nativeEvent.pageY;
             }}
             onResponderRelease={(e) => {
               if (
-                e.nativeEvent.pageX === dragData.lastX &&
-                e.nativeEvent.pageY === dragData.lastY
+                e.nativeEvent.pageX === dragData.startX &&
+                e.nativeEvent.pageY === dragData.startY
               ) {
                 sendUDP('click', {});
               }
@@ -106,6 +108,8 @@ function App() {
                 x: e.nativeEvent.pageX - dragData.lastX,
                 y: e.nativeEvent.pageY - dragData.lastY,
               });
+              dragData.lastX = e.nativeEvent.pageX;
+              dragData.lastY = e.nativeEvent.pageY;
             }}>
             <Text style={{color: '#fff', top: 60, textAlign: 'center'}}>
               Drag around to control your mouse!
