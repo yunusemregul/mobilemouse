@@ -19,43 +19,22 @@ let uSocket: UdpSocket;
 let connectedIp: string;
 let dragData = {lastX: 0, lastY: 0, startX: 0, startY: 0};
 
+let desktopFinder  = dgram.createSocket({type: 'udp4'});
+desktopFinder.on('message', (msg, rinfo) => {
+  msg = JSON.parse(JSON.stringify(msg));
+
+})
+desktopFinder.bind(PORT+2);
+
 function App() {
   const [desktopIPs, setDesktopIPs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  console.log('re render');
+  console.log('re render new');
 
   // TODO: learn what useAsync is
   async function findDesktops() {
-    NetworkInfo.getIPV4Address().then((ipAddress) => {
-      if (ipAddress) {
-        const LAN = ipAddress.substring(0, ipAddress.lastIndexOf('.'));
-        console.log('LAN: ' + LAN + '.X');
 
-        for (let i = 2; i <= 16; i++) {
-          const ipToScan = LAN + '.' + i;
-
-          let xhr = new XMLHttpRequest();
-
-          xhr.onload = function () {
-            if (xhr.readyState === 4) {
-              if (xhr.status === 200) {
-                if (xhr.getResponseHeader('Content-Type') === 'mobilemouse') {
-                  if (!desktopIPs.includes(ipToScan)) {
-                    setDesktopIPs([...desktopIPs, ipToScan]);
-                  }
-                }
-              }
-            }
-          };
-
-          xhr.open('HEAD', 'http://' + ipToScan + ':' + PORT);
-          xhr.setRequestHeader('Connection', 'close');
-          xhr.timeout = 1000;
-          xhr.send(null);
-        }
-      }
-    });
   }
 
   // sends udp message to server
