@@ -1,10 +1,7 @@
-import { app, BrowserWindow, ipcMain } from "electron";
-import * as http from 'http';
-import * as robot from 'robotjs';
 import * as dgram from 'dgram';
-import electron from 'electron';
+import electron, { app, BrowserWindow, ipcMain } from 'electron';
 import os from 'os';
-import { assert } from "console";
+import * as robot from 'robotjs';
 
 const ipc = electron.ipcMain;
 const PORT = 41414;
@@ -40,6 +37,10 @@ udpServer.on('message', (msg, rinfo) => {
   }
 })
 
+udpServer.on('connect', () => {
+
+});
+
 udpServer.bind(PORT + 1);
 
 const broadcastClient = dgram.createSocket('udp4');
@@ -48,7 +49,7 @@ broadcastClient.on('listening', () => {
   setInterval(() => {
     const ip = getNetworkInfo().address;
     const hostname = os.hostname();
-    broadcastClient.send([ip, hostname], PORT + 2, getBroadcastIP());
+    broadcastClient.send(JSON.stringify({ ip: ip, name: hostname }), PORT + 2, getBroadcastIP());
   }, 1000)
 })
 

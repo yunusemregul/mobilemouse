@@ -19,23 +19,18 @@ let uSocket: UdpSocket;
 let connectedIp: string;
 let dragData = {lastX: 0, lastY: 0, startX: 0, startY: 0};
 
-let desktopFinder  = dgram.createSocket({type: 'udp4'});
-desktopFinder.on('message', (msg, rinfo) => {
-  msg = JSON.parse(JSON.stringify(msg));
-
-})
-desktopFinder.bind(PORT+2);
+let desktops: any[] = [];
 
 function App() {
-  const [desktopIPs, setDesktopIPs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-
-  console.log('re render new');
-
-  // TODO: learn what useAsync is
-  async function findDesktops() {
-
-  }
+  const [rerenderer, setRerenderer] = useState<any[]>([]);
+  /*
+    rerenderer:
+      I use this to rerender this component when a new desktop is found by desktopFinder udp socket.
+      Normally I could do this with a state for desktops, it would rerender when that state changes but somehow when I do it that way,
+      desktops state doesnt seem to change. I have to search why this happens but for now it works like this.
+  */
+  console.log('re render');
 
   // sends udp message to server
   async function sendUDP(operation: string, data: any) {
@@ -52,7 +47,16 @@ function App() {
   }
 
   useEffect(() => {
-    findDesktops();
+    let desktopFinder = dgram.createSocket({type: 'udp4'});
+    desktopFinder.on('message', (msg, rinfo) => {
+      msg = JSON.parse(msg.toString());
+
+      if (!desktops.some((desk) => desk.ip === msg.ip)) {
+        desktops.push(msg);
+        setRerenderer([]); // TODO: this is very hacky, makes me uncomfortable
+      }
+    });
+    desktopFinder.bind(PORT + 2);
   }, []);
 
   return (
@@ -108,15 +112,15 @@ function App() {
                 Connectable devices:
               </Text>
               <View style={{display: 'flex', flexDirection: 'row'}}>
-                {desktopIPs.map((ip) => (
+                {desktops.map((desktop) => (
                   <TouchableOpacity
                     onPress={() => {
                       setIsConnected(true);
-                      connectedIp = ip;
+                      connectedIp = desktop.ip;
                       uSocket = dgram.createSocket({type: 'udp4'});
                       uSocket.bind(PORT + 1);
                     }}
-                    key={ip}
+                    key={desktop.ip}
                     style={{
                       backgroundColor: '#555',
                       padding: 12,
@@ -124,25 +128,14 @@ function App() {
                       marginTop: 8,
                     }}>
                     <View style={{}}>
-                      <Text style={{color: '#00ff00', fontSize: 16}}>{ip}</Text>
+                      <Text style={{color: '#00ff00', fontSize: 16}}>
+                        {desktop.name + ' (' + desktop.ip + ')'}
+                      </Text>
                     </View>
                   </TouchableOpacity>
                 ))}
               </View>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: '#666',
-                  marginTop: 12,
-                  padding: 8,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}
-                onPress={findDesktops}>
-                <Text style={{color: '#ffff00', fontWeight: 'bold'}}>
-                  REFRESH
-                </Text>
-              </TouchableOpacity>
+              <View style={{display: 'flex', flexDirection: 'row'}}></View>
             </View>
           </View>
         </>
