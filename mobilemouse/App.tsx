@@ -1,21 +1,23 @@
 import React, {useEffect, useState} from 'react';
 import {
+  AppRegistry,
   SafeAreaView,
   Text,
-  View,
-  AppRegistry,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import {NetworkInfo} from 'react-native-network-info';
-import {name as appName} from './app.json';
 import dgram from 'react-native-udp';
 import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
+import {name as appName} from './app.json';
+import {getDeviceName} from 'react-native-device-info';
 
 const PORT = 41414;
 
 // TODO: separate this file into smaller components, improve the UI
+// TODO: sometimes you cant click on touchableopacities
 
 let uSocket: UdpSocket;
+let webSocket: WebSocket;
 let connectedIp: string;
 let dragData = {lastX: 0, lastY: 0, startX: 0, startY: 0};
 
@@ -44,6 +46,25 @@ function App() {
         if (err) throw err;
       },
     );
+  }
+
+  function connect(ip: string) {
+    uSocket = dgram.createSocket({type: 'udp4'});
+    uSocket.bind(PORT + 1);
+    uSocket.once('listening', () => {
+      getDeviceName().then((deviceName) => {
+        sendUDP('connect', {name: deviceName});
+      });
+    });
+    uSocket.on('message', (msg, rinfo) => {
+      msg = msg.toString();
+
+      if (msg === 'ping') {
+        sendUDP('pong', {});
+      }
+    });
+    setIsConnected(true);
+    connectedIp = ip;
   }
 
   useEffect(() => {
@@ -114,12 +135,7 @@ function App() {
               <View style={{display: 'flex', flexDirection: 'row'}}>
                 {desktops.map((desktop) => (
                   <TouchableOpacity
-                    onPress={() => {
-                      setIsConnected(true);
-                      connectedIp = desktop.ip;
-                      uSocket = dgram.createSocket({type: 'udp4'});
-                      uSocket.bind(PORT + 1);
-                    }}
+                    onPress={() => connect(desktop.ip)}
                     key={desktop.ip}
                     style={{
                       backgroundColor: '#555',

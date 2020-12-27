@@ -21,6 +21,14 @@ ipc.on("get_pc_info", function (event, arg) {
     })
 });
 
+ipc.on("connect", function (event, arg) {
+    $('#connected').text(arg + " şu anda bağlı.");
+});
+
+ipc.on("disconnect", function () {
+    $("#connected").text("Bağlı telefon yok.");
+});
+
 $(function () {
     ipc.send("get_pc_info");
 })

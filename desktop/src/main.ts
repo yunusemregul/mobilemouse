@@ -12,13 +12,32 @@ const PORT = 41414;
 */
 
 const udpServer = dgram.createSocket("udp4");
+let udpServerConnectedInfo: { ip: string, port: number };
+let isConnected = false;
+let waitingforPong = false;
+
+let win: BrowserWindow;
 
 udpServer.on('message', (msg, rinfo) => {
   const data = JSON.parse(msg.toString());
 
   console.log(data);
 
+
   switch (data.operation) {
+    case 'connect': // TODO: do this with TCP
+      {
+        win.webContents.send("connect", data.name);
+        udpServer.connect(rinfo.port, rinfo.address);
+        udpServerConnectedInfo = { port: rinfo.port, ip: rinfo.address };
+        isConnected = true;
+        break;
+      }
+    case 'pong':
+      {
+        waitingforPong = false;
+        break;
+      }
     case 'move':
       {
         // TODO: add sensitivity option to mobile
@@ -37,9 +56,21 @@ udpServer.on('message', (msg, rinfo) => {
   }
 })
 
-udpServer.on('connect', () => {
+setInterval(() => {
+  if (isConnected === true) {
+    if (waitingforPong === true) {
+      console.log("pong did not come"); // TODO: ping ponging with an udp server is not a good idea, do this with tcp
 
-});
+      udpServer.disconnect();
+      isConnected = false;
+      win.webContents.send("disconnect");
+    }
+    else {
+      udpServer.send("ping");
+      waitingforPong = true;
+    }
+  }
+}, 3000);
 
 udpServer.bind(PORT + 1);
 
@@ -56,7 +87,7 @@ broadcastClient.on('listening', () => {
 broadcastClient.bind(PORT + 2);
 
 function createWindow() {
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 350,
     height: 550,
     webPreferences: {
