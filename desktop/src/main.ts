@@ -3,6 +3,7 @@ import electron, { app, BrowserWindow, ipcMain } from 'electron';
 import os from 'os';
 import * as robot from 'robotjs';
 import * as net from 'net';
+import * as path from 'path';
 
 const ipc = electron.ipcMain;
 const PORT = 41414;
@@ -132,7 +133,7 @@ function createWindow() {
   });
 
   win.removeMenu();
-  win.loadFile("src/views/index.html");
+  win.loadFile(path.join(__dirname, 'public/index.html'));
 
   console.log(getBroadcastIP());
 }

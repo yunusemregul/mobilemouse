@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@types/react": "^17.0.0",
-    "@types/react-native": "^0.63.42",
+    "@types/react-native": "^0.63.43",
     "react": "^17.0.1",
     "react-native": "0.63.4",
     "react-native-appearance": "^0.3.4",
