@@ -10,6 +10,8 @@ import dgram from 'react-native-udp';
 import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
 import {name as appName} from './app.json';
 import {getDeviceName} from 'react-native-device-info';
+import TcpSocket from 'react-native-tcp-socket';
+import TypeTcpSocket from 'react-native-tcp-socket/lib/types/TcpSocket';
 
 const PORT = 41414;
 
@@ -17,11 +19,12 @@ const PORT = 41414;
 // TODO: sometimes you cant click on touchableopacities
 
 let uSocket: UdpSocket;
-let webSocket: WebSocket;
 let connectedIp: string;
 let dragData = {lastX: 0, lastY: 0, startX: 0, startY: 0};
 
 let desktops: any[] = [];
+
+let tcpClient: TypeTcpSocket;
 
 function App() {
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -35,7 +38,7 @@ function App() {
   console.log('re render');
 
   // sends udp message to server
-  async function sendUDP(operation: string, data: any) {
+  function sendUDP(operation: string, data: any) {
     uSocket.send(
       JSON.stringify({operation: operation, ...data}),
       undefined,
@@ -48,21 +51,35 @@ function App() {
     );
   }
 
+  function sendTCP(operation: string, data: any) {
+    tcpClient.write(
+      JSON.stringify({operation: operation, ...data}),
+      'ascii',
+      function (err) {
+        if (err) throw err;
+      },
+    );
+  }
+
   function connect(ip: string) {
     uSocket = dgram.createSocket({type: 'udp4'});
     uSocket.bind(PORT + 1);
-    uSocket.once('listening', () => {
+
+    tcpClient = TcpSocket.createConnection({host: ip, port: PORT + 1}, () => {
       getDeviceName().then((deviceName) => {
-        sendUDP('connect', {name: deviceName});
+        sendTCP('connect', {name: deviceName});
+        console.log('sent connection msg from tcp');
       });
     });
-    uSocket.on('message', (msg, rinfo) => {
+
+    tcpClient.on('data', (msg) => {
       msg = msg.toString();
 
       if (msg === 'ping') {
-        sendUDP('pong', {});
+        tcpClient.write('pong');
       }
     });
+
     setIsConnected(true);
     connectedIp = ip;
   }

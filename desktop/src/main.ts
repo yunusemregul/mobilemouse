@@ -2,6 +2,7 @@ import * as dgram from 'dgram';
 import electron, { app, BrowserWindow, ipcMain } from 'electron';
 import os from 'os';
 import * as robot from 'robotjs';
+import * as net from 'net';
 
 const ipc = electron.ipcMain;
 const PORT = 41414;
@@ -9,35 +10,85 @@ const PORT = 41414;
 /*
   PORT + 1 = udp server listening for messages sent from mobile
   PORT + 2 = udp client that broadcasts to broadcast address of local network
+  TODO: maybe all sockets can be on a single port?
 */
 
 const udpServer = dgram.createSocket("udp4");
+const tcpServer = net.createServer({ allowHalfOpen: false });
+tcpServer.maxConnections = 1;
+
 let udpServerConnectedInfo: { ip: string, port: number };
 let isConnected = false;
 let waitingforPong = false;
 
 let win: BrowserWindow;
 
+// TODO: test if multiple phones can connect (they shouldn't be able to)
+tcpServer.on('connection', (conn) => {
+  let address = conn.remoteAddress;
+  address = address.replace(/^.*:/, ''); // strip ::ffff: part
+
+  console.log("TCP: new client connection from " + address);
+
+  // TODO: fix error: cannot call write after a stream was destroyed
+  const heartbeatInterval = setInterval(() => {
+    if (conn.destroyed) {
+      clearInterval(heartbeatInterval);
+      return;
+    }
+
+    if (waitingforPong) {
+      console.log("didn't receive pong, closing connection");
+      conn.destroy();
+    }
+
+    conn.write("ping");
+    waitingforPong = true;
+  }, 3000);
+
+  conn.on('data', (msg) => {
+    let data: any = msg.toString();
+
+    if (data === "pong") {
+      waitingforPong = false;
+      return;
+    }
+
+    data = JSON.parse(data);
+
+    switch (data.operation) {
+      case 'connect':
+        {
+          win.webContents.send("connect", data.name);
+
+          udpServer.connect(conn.localPort, address);
+          udpServerConnectedInfo = { port: conn.localPort, ip: address };
+          isConnected = true;
+          break;
+        }
+    }
+  });
+
+  conn.once('close', () => {
+    console.log("TCP: client " + address + " has closed the connection");
+    udpServer.disconnect();
+    win.webContents.send('disconnect');
+    clearInterval(heartbeatInterval);
+  });
+})
+
+tcpServer.listen(PORT + 1, () => {
+  console.log("tcp server is listening");
+})
+
 udpServer.on('message', (msg, rinfo) => {
+  // TODO: check if the rinfo sender is the phone we must be connected to
+
   const data = JSON.parse(msg.toString());
 
   console.log(data);
 
-
   switch (data.operation) {
-    case 'connect': // TODO: do this with TCP
-      {
-        win.webContents.send("connect", data.name);
-        udpServer.connect(rinfo.port, rinfo.address);
-        udpServerConnectedInfo = { port: rinfo.port, ip: rinfo.address };
-        isConnected = true;
-        break;
-      }
-    case 'pong':
-      {
-        waitingforPong = false;
-        break;
-      }
     case 'move':
       {
         // TODO: add sensitivity option to mobile
@@ -55,22 +106,6 @@ udpServer.on('message', (msg, rinfo) => {
       }
   }
 })
-
-setInterval(() => {
-  if (isConnected === true) {
-    if (waitingforPong === true) {
-      console.log("pong did not come"); // TODO: ping ponging with an udp server is not a good idea, do this with tcp
-
-      udpServer.disconnect();
-      isConnected = false;
-      win.webContents.send("disconnect");
-    }
-    else {
-      udpServer.send("ping");
-      waitingforPong = true;
-    }
-  }
-}, 3000);
 
 udpServer.bind(PORT + 1);
 
