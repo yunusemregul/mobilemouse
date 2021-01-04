@@ -1,9 +1,10 @@
-import * as dgram from 'dgram';
+import dgram from 'dgram';
 import electron, { app, BrowserWindow, ipcMain } from 'electron';
 import os from 'os';
-import * as robot from 'robotjs';
-import * as net from 'net';
-import * as path from 'path';
+import robot from 'robotjs';
+import net from 'net';
+import path from 'path';
+import imagemin from 'imagemin';
 
 const ipc = electron.ipcMain;
 const PORT = 41414;
@@ -16,7 +17,7 @@ const PORT = 41414;
 
 const udpServer = dgram.createSocket("udp4");
 const tcpServer = net.createServer({ allowHalfOpen: false });
-tcpServer.maxConnections = 1;
+// tcpServer.maxConnections = 1;
 
 let udpServerConnectedInfo: { ip: string, port: number };
 let isConnected = false;
@@ -32,27 +33,16 @@ tcpServer.on('connection', (conn) => {
   console.log("TCP: new client connection from " + address);
 
   // TODO: fix error: cannot call write after a stream was destroyed
-  const heartbeatInterval = setInterval(() => {
-    if (conn.destroyed) {
-      clearInterval(heartbeatInterval);
-      return;
-    }
-
-    if (waitingforPong) {
-      console.log("didn't receive pong, closing connection");
-      conn.destroy();
-    }
-
-    conn.write("ping");
-    waitingforPong = true;
-  }, 3000);
+  let heartbeatInterval: NodeJS.Timeout;
 
   conn.on('data', (msg) => {
     let data: any = msg.toString();
 
-    if (data === "pong") {
-      waitingforPong = false;
-      return;
+    if (isConnected && udpServerConnectedInfo.ip === address) {
+      if (data === "pong") {
+        waitingforPong = false;
+        return;
+      }
     }
 
     data = JSON.parse(data);
@@ -60,11 +50,29 @@ tcpServer.on('connection', (conn) => {
     switch (data.operation) {
       case 'connect':
         {
+          if (isConnected)
+            return;
+
           win.webContents.send("connect", data.name);
 
           udpServer.connect(conn.localPort, address);
           udpServerConnectedInfo = { port: conn.localPort, ip: address };
           isConnected = true;
+
+          heartbeatInterval = setInterval(() => {
+            if (conn.destroyed) {
+              clearInterval(heartbeatInterval);
+              return;
+            }
+
+            if (waitingforPong) {
+              console.log("didn't receive pong, closing connection");
+              conn.destroy();
+            }
+
+            conn.write("ping");
+            waitingforPong = true;
+          }, 3000);
           break;
         }
     }
@@ -72,9 +80,11 @@ tcpServer.on('connection', (conn) => {
 
   conn.once('close', () => {
     console.log("TCP: client " + address + " has closed the connection");
-    udpServer.disconnect();
-    win.webContents.send('disconnect');
-    clearInterval(heartbeatInterval);
+    if (isConnected && udpServerConnectedInfo.ip === address) {
+      udpServer.disconnect();
+      win.webContents.send('disconnect');
+      clearInterval(heartbeatInterval);
+    }
   });
 })
 
@@ -83,7 +93,8 @@ tcpServer.listen(PORT + 1, () => {
 })
 
 udpServer.on('message', (msg, rinfo) => {
-  // TODO: check if the rinfo sender is the phone we must be connected to
+  if (!isConnected) return;
+  if (rinfo.address !== udpServerConnectedInfo.ip) return;
 
   const data = JSON.parse(msg.toString());
 

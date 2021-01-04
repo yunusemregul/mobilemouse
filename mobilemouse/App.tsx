@@ -12,13 +12,12 @@ import TypeTcpSocket from 'react-native-tcp-socket/lib/types/TcpSocket';
 import dgram from 'react-native-udp';
 import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
 import {name as appName} from './app.json';
+import KeepAwake from 'react-native-keep-awake';
 
 const PORT = 41414;
 
 // TODO: separate this file into smaller components, improve the UI
 // TODO: sometimes you cant click on touchableopacities
-// TODO: disable multitouch
-// TODO: disable display sleep
 
 let uSocket: UdpSocket;
 let connectedIp: string;
@@ -63,6 +62,11 @@ function App() {
     );
   }
 
+  function onDisconnect() {
+    desktops = [];
+    setIsConnected(false);
+  }
+
   function connect(ip: string) {
     uSocket = dgram.createSocket({type: 'udp4'});
     uSocket.bind(PORT + 1);
@@ -84,6 +88,10 @@ function App() {
 
     setIsConnected(true);
     connectedIp = ip;
+
+    tcpClient.on('close', () => {
+      onDisconnect();
+    });
   }
 
   useEffect(() => {
@@ -91,16 +99,36 @@ function App() {
     desktopFinder.on('message', (msg, rinfo) => {
       msg = JSON.parse(msg.toString());
 
-      if (!desktops.some((desk) => desk.ip === msg.ip)) {
-        desktops.push(msg);
+      const inDesktops = desktops.find((desk) => desk.ip === msg.ip);
+      if (inDesktops == null) {
+        desktops.push({...msg, lastReceived: Date.now()});
         setRerenderer([]); // TODO: this is very hacky, makes me uncomfortable
+      } else {
+        const index = desktops.indexOf(inDesktops);
+        desktops[index] = {...inDesktops, lastReceived: Date.now()};
       }
     });
     desktopFinder.bind(PORT + 2);
+
+    setInterval(() => {
+      if (!isConnected) {
+        let changeMade = false;
+        desktops = desktops.filter((desktop) => {
+          if ((Date.now() - desktop.lastReceived) > 2000) {
+            changeMade = true;
+            return false;
+          }
+          return true;
+        });
+
+        if (changeMade) setRerenderer([]);
+      }
+    }, 500);
   }, []);
 
   return (
     <SafeAreaView style={{flex: 1}}>
+      <KeepAwake />
       {isConnected ? (
         <>
           <View
@@ -152,23 +180,29 @@ function App() {
                 Connectable devices:
               </Text>
               <View style={{display: 'flex', flexDirection: 'row'}}>
-                {desktops.map((desktop) => (
-                  <TouchableOpacity
-                    onPress={() => connect(desktop.ip)}
-                    key={desktop.ip}
-                    style={{
-                      backgroundColor: '#555',
-                      padding: 12,
-                      width: '100%',
-                      marginTop: 8,
-                    }}>
-                    <View style={{}}>
-                      <Text style={{color: '#00ff00', fontSize: 16}}>
-                        {desktop.name + ' (' + desktop.ip + ')'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                {desktops.map((desktop) => {
+                  if (Date.now() - desktop.lastReceived > 2000) {
+                    return;
+                  }
+
+                  return (
+                    <TouchableOpacity
+                      onPress={() => connect(desktop.ip)}
+                      key={desktop.ip}
+                      style={{
+                        backgroundColor: '#555',
+                        padding: 12,
+                        width: '100%',
+                        marginTop: 8,
+                      }}>
+                      <View style={{}}>
+                        <Text style={{color: '#00ff00', fontSize: 16}}>
+                          {desktop.name + ' (' + desktop.ip + ')'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
               <View style={{display: 'flex', flexDirection: 'row'}}></View>
             </View>
