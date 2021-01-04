@@ -6,17 +6,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import dgram from 'react-native-udp';
-import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
-import {name as appName} from './app.json';
 import {getDeviceName} from 'react-native-device-info';
 import TcpSocket from 'react-native-tcp-socket';
 import TypeTcpSocket from 'react-native-tcp-socket/lib/types/TcpSocket';
+import dgram from 'react-native-udp';
+import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
+import {name as appName} from './app.json';
 
 const PORT = 41414;
 
 // TODO: separate this file into smaller components, improve the UI
 // TODO: sometimes you cant click on touchableopacities
+// TODO: disable multitouch
+// TODO: disable display sleep
 
 let uSocket: UdpSocket;
 let connectedIp: string;
