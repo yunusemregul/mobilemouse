@@ -13,9 +13,8 @@ const ipc = electron.ipcMain;
 const PORT = 41414;
 
 /*
-  PORT + 1 = udp server listening for messages sent from mobile
-  PORT + 2 = udp client that broadcasts to broadcast address of local network
-  TODO: maybe all sockets can be on a single port?
+  PORT = tcp & udp server listening for messages sent from mobile
+  PORT + 1 = udp client that broadcasts to broadcast address of local network
 */
 
 const udpServer = dgram.createSocket("udp4");
@@ -107,7 +106,7 @@ tcpServer.on('connection', (conn) => {
   });
 })
 
-tcpServer.listen(PORT + 1, () => {
+tcpServer.listen(PORT, () => {
   console.log("tcp server is listening");
 })
 
@@ -138,7 +137,7 @@ udpServer.on('message', (msg, rinfo) => {
   }
 })
 
-udpServer.bind(PORT + 1);
+udpServer.bind(PORT);
 
 const broadcastClient = dgram.createSocket('udp4');
 broadcastClient.on('listening', () => {
@@ -146,11 +145,11 @@ broadcastClient.on('listening', () => {
   setInterval(() => {
     const ip = getNetworkInfo().address;
     const hostname = os.hostname();
-    broadcastClient.send(JSON.stringify({ ip: ip, name: hostname }), PORT + 2, getBroadcastIP());
+    broadcastClient.send(JSON.stringify({ ip: ip, name: hostname }), PORT + 1, getBroadcastIP());
   }, 1000)
 })
 
-broadcastClient.bind(PORT + 2);
+broadcastClient.bind(PORT + 1);
 
 function createWindow() {
   win = new BrowserWindow({

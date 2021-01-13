@@ -44,7 +44,7 @@ function App() {
       JSON.stringify({operation: operation, ...data}),
       undefined,
       undefined,
-      PORT + 1,
+      PORT,
       connectedIp,
       function (err) {
         if (err) throw err;
@@ -69,9 +69,9 @@ function App() {
 
   function connect(ip: string) {
     uSocket = dgram.createSocket({type: 'udp4'});
-    uSocket.bind(PORT + 1);
+    uSocket.bind(PORT);
 
-    tcpClient = TcpSocket.createConnection({host: ip, port: PORT + 1}, () => {
+    tcpClient = TcpSocket.createConnection({host: ip, port: PORT}, () => {
       getDeviceName().then((deviceName) => {
         sendTCP('connect', {name: deviceName});
         console.log('sent connection msg from tcp');
@@ -88,7 +88,7 @@ function App() {
 
     uSocket.on('message', (msg) => {
       // TODO: process FLV buffers and show them
-    })
+    });
 
     setIsConnected(true);
     connectedIp = ip;
@@ -112,7 +112,7 @@ function App() {
         desktops[index] = {...inDesktops, lastReceived: Date.now()};
       }
     });
-    desktopFinder.bind(PORT + 2);
+    desktopFinder.bind(PORT + 1);
 
     setInterval(() => {
       if (!isConnected) {
