@@ -86,6 +86,10 @@ function App() {
       }
     });
 
+    uSocket.on('message', (msg) => {
+      // TODO: process FLV buffers and show them
+    })
+
     setIsConnected(true);
     connectedIp = ip;
 
@@ -114,7 +118,7 @@ function App() {
       if (!isConnected) {
         let changeMade = false;
         desktops = desktops.filter((desktop) => {
-          if ((Date.now() - desktop.lastReceived) > 2000) {
+          if (Date.now() - desktop.lastReceived > 2000) {
             changeMade = true;
             return false;
           }
