@@ -7,12 +7,12 @@ import {
   View,
 } from 'react-native';
 import {getDeviceName} from 'react-native-device-info';
+import KeepAwake from 'react-native-keep-awake';
 import TcpSocket from 'react-native-tcp-socket';
 import TypeTcpSocket from 'react-native-tcp-socket/lib/types/TcpSocket';
 import dgram from 'react-native-udp';
 import UdpSocket from 'react-native-udp/lib/types/UdpSocket';
 import {name as appName} from './app.json';
-import KeepAwake from 'react-native-keep-awake';
 
 const PORT = 41414;
 

@@ -1,13 +1,9 @@
 import dgram from 'dgram';
 import electron, { app, BrowserWindow, ipcMain } from 'electron';
-import os from 'os';
-import robot from 'robotjs';
 import net from 'net';
+import os from 'os';
 import path from 'path';
-import imagemin from 'imagemin';
-import imageminPngQuant from 'imagemin-pngquant';
-import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
-import ffmpeg from 'ffmpeg-static';
+import robot from 'robotjs';
 
 const ipc = electron.ipcMain;
 const PORT = 41414;
@@ -36,13 +32,11 @@ tcpServer.on('connection', (conn) => {
 
   // TODO: fix error: cannot call write after a stream was destroyed (is fixed?)
   let heartbeatInterval: NodeJS.Timeout;
-  let ffmpegProcess: ChildProcessWithoutNullStreams;
 
   function connectionClosed() {
     waitingforPong = false;
     isConnected = false;
     udpServerConnectedInfo = { ip: "", port: -1 };
-    ffmpegProcess.kill();
     udpServer.disconnect();
     clearInterval(heartbeatInterval);
   }
@@ -82,16 +76,6 @@ tcpServer.on('connection', (conn) => {
             conn.write("ping");
             waitingforPong = true;
           }, 3000);
-
-          ffmpegProcess = spawn(
-            ffmpeg,
-            ["-probesize", "10M", "-f", "gdigrab", "-framerate", "15", "-i", "desktop", "-f", "flv", "-"],
-            { stdio: "pipe" }
-          );
-          const stream = ffmpegProcess.stdout;
-          stream.on('data', chunk => {
-            udpServer.send(chunk);
-          })
           break;
         }
     }
