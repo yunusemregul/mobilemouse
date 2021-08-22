@@ -197,7 +197,7 @@ function getBroadcastIP() {
   return broadcastIp.join('.');
 }
 
-ipcMain.on("get_pc_info", function (event, arg) {
+ipcMain.on("get_pc_info", function (event: any, arg: any) {
   const networkInfo = getNetworkInfo();
 
   if (!networkInfo)

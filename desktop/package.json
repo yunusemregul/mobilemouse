@@ -6,8 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "copy": "copy .\\src\\public\\index.html .\\dist\\public && copy .\\src\\public\\style.css .\\dist\\public",
-    "start": "npm run copy && tsc && electron .",
-    "build": "npm run copy && electron-builder"
+    "compile": "tsc && npm run copy",
+    "start": "npm run compile && electron .",
+    "build": "npm run compile && electron-builder"
   },
   "build": {
     "appId": "mobilemouse",
@@ -25,7 +26,6 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/electron": "1.6.10",
     "@types/ffmpeg-static": "^3.0.0",
     "@types/imagemin": "^7.0.0",
     "@types/jquery": "^3.5.5",
