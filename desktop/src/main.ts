@@ -4,6 +4,7 @@ import net from 'net';
 import os from 'os';
 import path from 'path';
 import robot from 'robotjs';
+import localIpV4Address from 'local-ipv4-address';
 
 const ipc = electron.ipcMain;
 const PORT = 41414;
@@ -126,10 +127,10 @@ udpServer.bind(PORT);
 const broadcastClient = dgram.createSocket('udp4');
 broadcastClient.on('listening', () => {
   broadcastClient.setBroadcast(true);
-  setInterval(() => {
-    const ip = getNetworkInfo().address;
+  setInterval(async () => {
+    const ip = (await getNetworkInfo()).address;
     const hostname = os.hostname();
-    broadcastClient.send(JSON.stringify({ ip: ip, name: hostname }), PORT + 1, getBroadcastIP());
+    broadcastClient.send(JSON.stringify({ ip: ip, name: hostname }), PORT + 1, await getBroadcastIP());
   }, 1000)
 })
 
@@ -165,14 +166,16 @@ app.on("activate", () => {
   }
 });
 
-function getNetworkInfo() {
+async function getNetworkInfo() {
+  var ipv4 = await localIpV4Address();
+
   var interfaces = os.networkInterfaces();
 
-  for (var k in interfaces) {
-    for (var k2 in interfaces[k]) {
-      var address = interfaces[k][k2];
-      if (address.family === 'IPv4' && !address.internal) {
-        return { address: address.address, mask: address.netmask };
+  for (var interfaceName in interfaces) {
+    for (var interfaceDataIndex in interfaces[interfaceName]) {
+      var interfaceData = interfaces[interfaceName][interfaceDataIndex];
+      if (interfaceData.address === ipv4) {
+        return { address: ipv4, mask: interfaceData.netmask };
       }
     }
   }
@@ -184,8 +187,8 @@ function ipToNumberArray(ip: string) {
   return ip.split('.').map((value) => parseInt(value));
 }
 
-function getBroadcastIP() {
-  const networkInfo = getNetworkInfo();
+async function getBroadcastIP() {
+  const networkInfo = await getNetworkInfo();
 
   const ipv4Parts = ipToNumberArray(networkInfo.address);
   const subnetParts = ipToNumberArray(networkInfo.mask);
@@ -197,8 +200,8 @@ function getBroadcastIP() {
   return broadcastIp.join('.');
 }
 
-ipcMain.on("get_pc_info", function (event: any, arg: any) {
-  const networkInfo = getNetworkInfo();
+ipcMain.on("get_pc_info", async function (event: any, arg: any) {
+  const networkInfo = await getNetworkInfo();
 
   if (!networkInfo)
     throw "Network info is not valid";
