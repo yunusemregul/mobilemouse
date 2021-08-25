@@ -4,9 +4,8 @@ import net from 'net';
 import os from 'os';
 import path from 'path';
 import robot from 'robotjs';
-import localIpV4Address from 'local-ipv4-address';
+import { getBroadcastIP, getNetworkInfo } from './utils';
 
-const ipc = electron.ipcMain;
 const PORT = 41414;
 
 /*
@@ -101,7 +100,7 @@ udpServer.on('message', (msg, rinfo) => {
 
   const data = JSON.parse(msg.toString());
 
-  console.log(data);
+  // console.log(data);
 
   switch (data.operation) {
     case 'move':
@@ -148,8 +147,6 @@ function createWindow() {
 
   win.removeMenu();
   win.loadFile(path.join(__dirname, 'public/index.html'));
-
-  console.log(getBroadcastIP());
 }
 
 app.whenReady().then(createWindow);
@@ -165,40 +162,6 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-async function getNetworkInfo() {
-  var ipv4 = await localIpV4Address();
-
-  var interfaces = os.networkInterfaces();
-
-  for (var interfaceName in interfaces) {
-    for (var interfaceDataIndex in interfaces[interfaceName]) {
-      var interfaceData = interfaces[interfaceName][interfaceDataIndex];
-      if (interfaceData.address === ipv4) {
-        return { address: ipv4, mask: interfaceData.netmask };
-      }
-    }
-  }
-
-  return null;
-}
-
-function ipToNumberArray(ip: string) {
-  return ip.split('.').map((value) => parseInt(value));
-}
-
-async function getBroadcastIP() {
-  const networkInfo = await getNetworkInfo();
-
-  const ipv4Parts = ipToNumberArray(networkInfo.address);
-  const subnetParts = ipToNumberArray(networkInfo.mask);
-
-  const networkAddress = ipv4Parts.map((value, i) => (value & subnetParts[i]));
-
-  const broadcastIp = networkAddress.map((value, i) => (value | ~subnetParts[i] + 256));
-
-  return broadcastIp.join('.');
-}
 
 ipcMain.on("get_pc_info", async function (event: any, arg: any) {
   const networkInfo = await getNetworkInfo();
